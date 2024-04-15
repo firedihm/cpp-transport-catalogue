@@ -13,23 +13,22 @@ void ParseAndPrintStat(const TransportCatalogue& catalogue, std::string_view req
     request = request.substr(std::move(++delim));
     if (command == "Bus"s) {
         try {
-            Bus* bus_info = catalogue.GetBus(request);
+            const Bus* bus = catalogue.GetBus(request);
             
-            double length = 0.0;
-            for (auto curr = bus_info->route.begin(), next = curr + 1; next != bus_info->route.end(); ++curr, ++next) {
-                length += geo::ComputeDistance((*curr)->coords, (*next)->coords);
-            }
+            int route_length = catalogue.CalculateRouteLength(bus);
             
             output << "Bus "s << request << ": "s
-                   << bus_info->route.size() << " stops on route, "s
-                   << bus_info->CountUniqueStops() << " unique stops, "s
-                   << std::move(length) << " route length\n"s;
+                   << bus->route.size() << " stops on route, "s
+                   << catalogue.CountUniqueStops(bus) << " unique stops, "s
+                   << route_length << " route length, "s
+                   << route_length / catalogue.CalculateRouteGeoLength(bus) << " curvature\n"s;
         } catch (std::out_of_range& e) {
             output << "Bus "s << request << ": not found\n"s;
         }
     } else if (command == "Stop"s) {
         try {
             const std::set<std::string_view>& buses_for_stop = catalogue.GetBusesForStop(catalogue.GetStop(request));
+            
             if (!buses_for_stop.empty()) {
                 output << "Stop "s << request << ": buses"s;
                 for (std::string_view bus : buses_for_stop) {
