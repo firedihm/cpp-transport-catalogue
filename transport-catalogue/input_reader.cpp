@@ -14,18 +14,41 @@ geo::Coordinates ParseCoordinates(std::string_view str) {
     static const double nan = std::nan("");
 
     auto not_space = str.find_first_not_of(' ');
-    auto comma = str.find(',');
-
+    auto comma = str.find(',', not_space);
     if (comma == str.npos) {
         return {nan, nan};
     }
 
     auto not_space2 = str.find_first_not_of(' ', comma + 1);
+    auto comma2 = str.find(',', not_space2); // может быть npos
 
     double lat = std::stod(std::string(str.substr(not_space, comma - not_space)));
-    double lng = std::stod(std::string(str.substr(not_space2)));
+    double lng = std::stod(std::string(str.substr(not_space2, comma2 - not_space2)));
 
     return {lat, lng};
+}
+
+std::vector<std::pair<std::string_view, int>> ParseDistances(std::string_view str) {
+    using namespace std::string_literals;
+    std::vector<std::pair<std::string_view, int>> result;
+    
+    // пропускаем первые две запятые, которые отделяют координаты остановки
+    auto comma = str.find(',');
+    comma = str.find(',', comma + 1);
+    
+    while (comma != str.npos) {
+        auto not_space = str.find_first_not_of(' ', comma + 1);
+        auto m = str.find('m', not_space);
+        
+        auto not_space2 = str.find("to"s, m);
+        not_space2 = str.find_first_not_of(' ', not_space2 + 2);
+        comma = str.find(',', comma + 1); // может быть npos
+        
+        result.emplace_back(str.substr(not_space2, comma - not_space2),
+                            std::stoi(std::string(str.substr(not_space, m - not_space))));
+    }
+    
+    return result;
 }
 
 /*
@@ -113,6 +136,13 @@ void InputReader::ApplyCommands(TransportCatalogue& catalogue) const {
     for (const auto& command : commands_) {
         if (command.command == "Stop"s) {
             catalogue.AddStop(command.id, detail::ParseCoordinates(command.description));
+        }
+    }
+    
+    // ...затем расстояния между ними...
+    for (const auto& command : commands_) {
+        if (command.command == "Stop"s) {
+            catalogue.AddDistance(command.id, detail::ParseDistances(command.description));
         }
     }
     
