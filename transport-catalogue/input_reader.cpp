@@ -22,8 +22,8 @@ geo::Coordinates ParseCoordinates(std::string_view str) {
     auto not_space2 = str.find_first_not_of(' ', comma + 1);
     auto comma2 = str.find(',', not_space2); // может быть npos
 
-    double lat = std::stod(std::string(str.substr(not_space, comma - not_space)));
-    double lng = std::stod(std::string(str.substr(not_space2, comma2 - not_space2)));
+    double lat = std::stod(std::string(str.substr(not_space, str.find_last_not_of(' ', comma - 1) + 1 - not_space)));
+    double lng = std::stod(std::string(str.substr(not_space2, str.find_last_not_of(' ', comma2 - 1) + 1 - not_space2)));
 
     return {lat, lng};
 }
@@ -44,7 +44,7 @@ std::vector<std::pair<std::string_view, int>> ParseDistances(std::string_view st
         not_space2 = str.find_first_not_of(' ', not_space2 + 2);
         comma = str.find(',', comma + 1); // может быть npos
         
-        result.emplace_back(str.substr(not_space2, comma - not_space2),
+        result.emplace_back(str.substr(not_space2, str.find_last_not_of(' ', comma - 1) + 1 - not_space2),
                             std::stoi(std::string(str.substr(not_space, m - not_space))));
     }
     
@@ -101,17 +101,17 @@ std::vector<std::string_view> ParseRoute(std::string_view route) {
 }
 
 CommandDescription ParseCommandDescription(std::string_view line) {
-    auto colon = line.find(':');
+    size_t colon = line.find(':');
     if (colon == line.npos) {
         return {};
     }
 
-    auto delim = line.find(' ', line.find_first_not_of(' '));
+    size_t delim = line.find(' ', line.find_first_not_of(' '));
     if (delim >= colon) {
         return {};
     }
 
-    auto not_space = line.find_first_not_of(' ', delim);
+    size_t not_space = line.find_first_not_of(' ', delim);
     if (not_space >= colon) {
         return {};
     }
