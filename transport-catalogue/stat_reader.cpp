@@ -9,8 +9,9 @@ void ParseAndPrintStat(const TransportCatalogue& catalogue, std::string_view req
     using namespace std::literals;
     
     size_t delim = request.find_first_of(' ');
-    std::string_view command = request.substr(0, delim);
-    request = request.substr(std::move(++delim));
+    std::string_view command = request.substr(request.find_first_not_of(' '), delim);
+    request = request.substr(request.find_first_not_of(' ', std::move(++delim)), request.find_last_not_of(' ') + 1);
+    
     if (command == "Bus"s) {
         try {
             const Bus* bus = catalogue.GetBus(request);
