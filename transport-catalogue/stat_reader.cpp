@@ -6,7 +6,7 @@
 namespace catalogue::stat {
 
 void ParseAndPrintStat(const TransportCatalogue& catalogue, std::string_view request, std::ostream& output) {
-    using namespace std::literals;
+    using namespace std::string_literals;
     
     size_t delim = request.find(' ');
     std::string_view command = request.substr(request.find_first_not_of(' '), delim);
