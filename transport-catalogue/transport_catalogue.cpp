@@ -43,7 +43,7 @@ int TransportCatalogue::GetDistanceBetweenStops(const Stop* from, const Stop* to
 }
 
 void TransportCatalogue::AddStop(const std::string& id, geo::Coordinates&& coords) {
-    Stop& ref = stops_.emplace_back(id, std::move(coords));
+    const Stop& ref = stops_.emplace_back(id, std::move(coords));
     stops_view_.emplace(ref.name, &ref);
     stop_to_buses_[&ref];
 }
