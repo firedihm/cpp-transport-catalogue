@@ -101,17 +101,17 @@ std::vector<std::string_view> ParseRoute(std::string_view route) {
 }
 
 CommandDescription ParseCommandDescription(std::string_view line) {
-    size_t colon = line.find(':');
+    auto colon = line.find(':');
     if (colon == line.npos) {
         return {};
     }
 
-    size_t delim = line.find(' ', line.find_first_not_of(' '));
+    auto delim = line.find(' ', line.find_first_not_of(' '));
     if (delim >= colon) {
         return {};
     }
 
-    size_t not_space = line.find_first_not_of(' ', delim);
+    auto not_space = line.find_first_not_of(' ', delim);
     if (not_space >= colon) {
         return {};
     }
