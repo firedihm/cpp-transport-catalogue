@@ -1,8 +1,8 @@
-#include <iostream>
-#include <string>
-
 #include "input_reader.h"
 #include "stat_reader.h"
+
+#include <iostream>
+#include <string>
 
 using namespace std;
 
