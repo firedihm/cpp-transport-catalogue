@@ -101,24 +101,24 @@ std::vector<std::string_view> ParseRoute(std::string_view route) {
 }
 
 CommandDescription ParseCommandDescription(std::string_view line) {
-    auto colon_pos = line.find(':');
-    if (colon_pos == line.npos) {
+    size_t colon = line.find(':');
+    if (colon == line.npos) {
         return {};
     }
 
-    auto space_pos = line.find(' ');
-    if (space_pos >= colon_pos) {
+    size_t delim = line.find(' ', line.find_first_not_of(' '));
+    if (delim >= colon) {
         return {};
     }
 
-    auto not_space = line.find_first_not_of(' ', space_pos);
-    if (not_space >= colon_pos) {
+    size_t not_space = line.find_first_not_of(' ', delim);
+    if (not_space >= colon) {
         return {};
     }
 
-    return {std::string(line.substr(0, space_pos)),
-            std::string(line.substr(not_space, colon_pos - not_space)),
-            std::string(line.substr(colon_pos + 1))};
+    return {std::string(line.substr(line.find_first_not_of(' '), delim)),
+            std::string(line.substr(not_space, line.find_last_not_of(' ', colon - 1) + 1 - not_space)),
+            std::string(line.substr(colon + 1))};
 }
 } // namespace detail
 
