@@ -1,10 +1,10 @@
 #pragma once
 
-namespace catalogue::geo {
+namespace geo {
 
 struct Coordinates {
-    bool operator==(const Coordinates& rhs) const;
-    bool operator!=(const Coordinates& rhs) const;
+    inline bool operator==(const Coordinates& rhs) const { return lat == rhs.lat && lng == rhs.lng; }
+    inline bool operator!=(const Coordinates& rhs) const { return !(*this == rhs); }
     
     double lat = 0.0;
     double lng = 0.0;
@@ -12,4 +12,4 @@ struct Coordinates {
 
 double ComputeDistance(Coordinates from, Coordinates to);
 
-} // namespace catalogue::geo
+} // namespace geo
