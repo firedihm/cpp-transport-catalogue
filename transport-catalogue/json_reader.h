@@ -13,8 +13,8 @@ public:
     
     void ProcessBaseRequests();
     const Document ProcessStatRequests();
-    void Print(const Document& response, int step = 4, int indent = 0);
-    void RenderMap(int step = 0, int indent = 4);
+    void PrintStats(int step = 4, int indent = 0);
+    void RenderMap(/* int step = 0, int indent = 4 */);
     
 private:
     Dict MakeBusResponse(const Dict& request);
