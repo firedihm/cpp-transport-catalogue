@@ -51,10 +51,10 @@ int main() {
     })"s);
     
     catalogue::TransportCatalogue catalogue;
-    const json::Document& input = json::Load(iss);
+    const json::Document& input = json::Load(std::cin);
     
     json::JsonReader reader(catalogue, input, std::cout);
     reader.ProcessBaseRequests();
-    reader.Print(reader.ProcessStatRequests());
-    reader.RenderMap();
+    reader.PrintStats();
+    //reader.RenderMap();
 }
