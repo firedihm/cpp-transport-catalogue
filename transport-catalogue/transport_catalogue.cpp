@@ -31,10 +31,8 @@ void TransportCatalogue::AddStop(const std::string& id, geo::Coordinates&& coord
     stop_to_buses_[&ref];
 }
 
-void TransportCatalogue::AddDistance(const std::string& id, std::vector<std::pair<std::string_view, int>>&& distances) {
-    for (const auto& [stop, distance] : distances) {
-        distances_.emplace(std::pair(GetStop(id), GetStop(stop)), distance);
-    }
+void TransportCatalogue::AddDistance(const std::string& source, const std::string_view destination, int distance) {
+    distances_.emplace(std::pair(GetStop(source), GetStop(destination)), distance);
 }
 
 void TransportCatalogue::AddBus(const std::string& id, std::vector<std::string_view>&& route, bool is_ring) {
@@ -46,11 +44,11 @@ void TransportCatalogue::AddBus(const std::string& id, std::vector<std::string_v
         stop_ptrs.push_back(stop_ptr);
         
         // обновляем здесь, чтобы при масштабировании не учитывать остановки без автобусов; сначала min...
-        min_max_coords_.first.lat = std::min(min_max_coords_.first.lat, stop_ptr->coords.lat);
-        min_max_coords_.first.lng = std::min(min_max_coords_.first.lng, stop_ptr->coords.lng);
+        min_max_coords_.min.lat = std::min(min_max_coords_.min.lat, stop_ptr->coords.lat);
+        min_max_coords_.min.lng = std::min(min_max_coords_.min.lng, stop_ptr->coords.lng);
         // ...потом max
-        min_max_coords_.second.lat = std::max(min_max_coords_.second.lat, stop_ptr->coords.lat);
-        min_max_coords_.second.lng = std::max(min_max_coords_.second.lng, stop_ptr->coords.lng);
+        min_max_coords_.max.lat = std::max(min_max_coords_.max.lat, stop_ptr->coords.lat);
+        min_max_coords_.max.lng = std::max(min_max_coords_.max.lng, stop_ptr->coords.lng);
     }
     // отзеркалим некольцевые маршруты
     if (!is_ring) {
