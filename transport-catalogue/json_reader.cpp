@@ -33,7 +33,9 @@ void JsonReader::ProcessBaseRequests() {
     // ...затем расстояния между ними...
     for (uint id : distances) {
         const Dict& request = requests[id].AsMap();
-        catalogue_.AddDistance(request.at("name"s).AsString(), ParseDistances(request));
+        for (const auto& /* <std::pair<std::string_view, int>> */ [destination, distance] : ParseDistances(request)) {
+            catalogue_.AddDistance(request.at("name"s).AsString(), destination, distance);
+        }
     }
     
     // ...потом маршруты
@@ -99,7 +101,7 @@ Dict JsonReader::MakeStopResponse(const Dict& request) {
 
 Dict JsonReader::MakeMapResponse(const Dict& request) {
     std::ostringstream oss;
-    render::RenderMap(ParseRenderDetails(input_.GetRoot().AsMap().at("render_settings"s).AsMap()), catalogue_, oss);
+    render::MapRenderer i(ParseRenderDetails(input_.GetRoot().AsMap().at("render_settings"s).AsMap()), catalogue_, oss);
     
     Dict response;
     response["request_id"s] = request.at("id"s).AsInt();
@@ -107,12 +109,12 @@ Dict JsonReader::MakeMapResponse(const Dict& request) {
     return response;
 }
 
-void JsonReader::Print(const Document& response, int step, int indent) {
-    json::Print(response, output_, step, indent);
+void JsonReader::PrintStats(int step, int indent) {
+    json::Print(ProcessStatRequests(), output_, step, indent);
 }
 
-void JsonReader::RenderMap(int step, int indent) {
-    render::RenderMap(ParseRenderDetails(input_.GetRoot().AsMap().at("render_settings"s).AsMap()), catalogue_, output_, step, indent);
+void JsonReader::RenderMap() {
+    render::MapRenderer i(ParseRenderDetails(input_.GetRoot().AsMap().at("render_settings"s).AsMap()), catalogue_, output_);
 }
 
 geo::Coordinates JsonReader::ParseCoordinates(const Dict& request) {
