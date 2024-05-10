@@ -2,10 +2,10 @@
 
 #include "geo.h"
 
+#include <cfloat>
 #include <deque>
 #include <set>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -16,9 +16,12 @@ struct Stop {
     geo::Coordinates coords;
 };
 
+enum class RouteType { RING, PENDULUM };
+
 struct Bus {
     std::string name;
     std::vector<const Stop*> route;
+    RouteType type;
 };
 
 class TransportCatalogue {
@@ -32,12 +35,16 @@ public:
     
     const Stop* GetStop(std::string_view key) const;
     const Bus* GetBus(std::string_view key) const;
-    const std::set<std::string_view>& GetBusesForStop(const Stop* stop) const;
+    const std::set<std::string_view>* GetBusesForStop(const Stop* stop) const;
     int GetDistanceBetweenStops(const Stop* from, const Stop* to) const;
+    
+    inline const std::deque<Stop>& GetStopsData() const { return stops_; };
+    inline const std::deque<Bus>& GetBusesData() const { return buses_; };
+    inline const std::pair<geo::Coordinates, geo::Coordinates>& GetMinMaxCoords() const { return min_max_coords_; };
     
     void AddStop(const std::string& id, geo::Coordinates&& coords);
     void AddDistance(const std::string& id, std::vector<std::pair<std::string_view, int>>&& distances);
-    void AddBus(const std::string& id, std::vector<std::string_view>&& route);
+    void AddBus(const std::string& id, std::vector<std::string_view>&& route, bool is_ring);
     
     static int CountUniqueStops(const Bus* bus);
     static double CalculateRouteGeoLength(const Bus* bus);
@@ -60,6 +67,9 @@ private:
     
     std::unordered_map<const Stop*, std::set<std::string_view>> stop_to_buses_;
     std::unordered_map<std::pair<const Stop*, const Stop*>, int, StopPtrsHasher> distances_;
+    
+    // для рендера: при обновлении справочника будем запоминать маргинальные координаты <min, max>
+    std::pair<geo::Coordinates, geo::Coordinates> min_max_coords_{{DBL_MAX, DBL_MAX}, {-DBL_MAX, -DBL_MAX}};
 };
 
 } // namespace catalogue
