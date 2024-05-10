@@ -3,15 +3,7 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-namespace catalogue::geo {
-
-bool Coordinates::operator==(const Coordinates& rhs) const {
-    return lat == rhs.lat && lng == rhs.lng;
-}
-
-bool Coordinates::operator!=(const Coordinates& rhs) const {
-    return !(*this == rhs);
-}
+namespace geo {
 
 double ComputeDistance(Coordinates from, Coordinates to) {
     using namespace std;
@@ -24,4 +16,4 @@ double ComputeDistance(Coordinates from, Coordinates to) {
            * EARTH_RADIUS;
 }
 
-}  // namespace catalogue::geo
+}  // namespace geo
