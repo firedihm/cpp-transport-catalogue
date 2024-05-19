@@ -25,10 +25,11 @@ public:
     
     explicit Node(std::string_view sv) : value_(std::string(std::move(sv))) {}
     
-    inline const Value& GetValue() const { return *this; }
-    
     bool operator==(const Node& rhs) const;
     bool operator!=(const Node& rhs) const;
+    
+    inline const Value& GetValue() const { return *this; }
+    inline Value& GetValue() { return *this; }
     
     bool IsInt() const;
     bool IsPureDouble() const;
@@ -45,6 +46,9 @@ public:
     const std::string& AsString() const;
     const Array& AsArray() const;
     const Dict& AsMap() const;
+    std::string& AsString();
+    Array& AsArray();
+    Dict& AsMap();
     
 private:
     Value value_;
@@ -65,6 +69,6 @@ private:
 
 Document Load(std::istream& input);
 
-void Print(const Document& doc, std::ostream& output, int step, int indent);
+void Print(const Document& doc, std::ostream& output, int step = 4, int indent = 0);
 
 }  // namespace json
