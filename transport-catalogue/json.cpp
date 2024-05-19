@@ -88,6 +88,27 @@ const Dict& Node::AsMap() const {
     return std::get<Dict>(GetValue());
 }
 
+std::string& Node::AsString() {
+    if (!IsString()) {
+        throw std::logic_error("Node has no string"s);
+    }
+    return std::get<std::string>(GetValue());
+}
+
+Array& Node::AsArray() {
+    if (!IsArray()) {
+        throw std::logic_error("Node has no array"s);
+    }
+    return std::get<Array>(GetValue());
+}
+
+Dict& Node::AsMap() {
+    if (!IsMap()) {
+        throw std::logic_error("Node has no dictionary"s);
+    }
+    return std::get<Dict>(GetValue());
+}
+
 bool Document::operator==(const Document& rhs) const {
     return this->GetRoot() == rhs.GetRoot();
 }
