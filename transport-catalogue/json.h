@@ -70,6 +70,6 @@ private:
 
 Document Load(std::istream& input);
 
-void Print(const Document& doc, std::ostream& output, int step = 4, int indent = 0);
+void Print(const Document& doc, std::ostream& output, int step, int indent);
 
 }  // namespace json
