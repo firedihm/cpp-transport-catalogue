@@ -22,9 +22,9 @@ class Node final : std::variant<std::nullptr_t, Array, Dict, bool, int, double, 
 public:
     using variant::variant;
     using Value = variant;
-
+    
     explicit Node(Value&& value) : variant(std::move(value)) {}
-    explicit Node(std::string_view sv) : value_(std::string(std::move(sv))) {}
+    //explicit Node(std::string_view sv) : value_(std::string(std::move(sv))) {}
     
     bool operator==(const Node& rhs) const;
     bool operator!=(const Node& rhs) const;
@@ -50,9 +50,6 @@ public:
     std::string& AsString();
     Array& AsArray();
     Dict& AsMap();
-    
-private:
-    Value value_;
 };
 
 class Document {
@@ -70,6 +67,6 @@ private:
 
 Document Load(std::istream& input);
 
-void Print(const Document& doc, std::ostream& output, int step, int indent);
+void Print(const Document& doc, std::ostream& output, int step = 4, int indent = 0);
 
 }  // namespace json
