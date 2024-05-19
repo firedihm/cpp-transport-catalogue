@@ -63,7 +63,6 @@ const Document JsonReader::ProcessStatRequests() {
     return Document(Node(response));
 }
 
-
 Dict JsonReader::MakeBusResponse(const Dict& request) {
     Dict response;
     if (const Bus* bus = catalogue_.GetBus(request.at("name"s).AsString())) {
