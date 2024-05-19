@@ -22,7 +22,8 @@ class Node final : std::variant<std::nullptr_t, Array, Dict, bool, int, double, 
 public:
     using variant::variant;
     using Value = variant;
-    
+
+    explicit Node(Value&& value) : variant(std::move(value)) {}
     explicit Node(std::string_view sv) : value_(std::string(std::move(sv))) {}
     
     bool operator==(const Node& rhs) const;
