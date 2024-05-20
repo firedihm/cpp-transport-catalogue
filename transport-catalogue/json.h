@@ -24,7 +24,6 @@ public:
     using Value = variant;
     
     explicit Node(Value&& value) : variant(std::move(value)) {}
-    //explicit Node(std::string_view sv) : value_(std::string(std::move(sv))) {}
     
     bool operator==(const Node& rhs) const;
     bool operator!=(const Node& rhs) const;
