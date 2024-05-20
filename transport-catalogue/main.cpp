@@ -51,7 +51,7 @@ int main() {
     })"s);
     
     catalogue::TransportCatalogue catalogue;
-    const json::Document& input = json::Load(std::cin);
+    const json::Document& input = json::Load(iss);
     
     json::JsonReader reader(catalogue, input, std::cout);
     reader.ProcessBaseRequests();
