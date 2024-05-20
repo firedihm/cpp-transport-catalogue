@@ -1,3 +1,4 @@
+#include "json_builder.h"
 #include "json_reader.h"
 
 #include <sstream>
@@ -48,6 +49,7 @@ void JsonReader::ProcessBaseRequests() {
 const Document JsonReader::ProcessStatRequests() {
     const Array& requests = input_.GetRoot().AsMap().at("stat_requests"s).AsArray();
     
+    /*
     Array response;
     response.reserve(requests.size());
     for (const Node& request : requests) {
@@ -61,6 +63,21 @@ const Document JsonReader::ProcessStatRequests() {
         }
     }
     return Document(Node(response));
+    */
+    // нельзя объявить ctx как Builder::ArrayContext потому что он приватный, но как auto можно -- гениально
+    Builder builder = json::Builder();
+    auto /* Builder::ArrayContext */ ctx = builder.StartArray();
+    for (const Node& request : requests) {
+        std::string_view type = request.AsMap().at("type"s).AsString();
+        if (type == "Bus"sv) {
+            ctx.Value(MakeBusResponse(request.AsMap()));
+        } else if (type == "Stop"sv) {
+            ctx.Value(MakeStopResponse(request.AsMap()));
+        } else if (type == "Map"sv) {
+            ctx.Value(MakeMapResponse(request.AsMap()));
+        }
+    }
+    return Document(ctx.EndArray().Build());
 }
 
 Dict JsonReader::MakeBusResponse(const Dict& request) {
