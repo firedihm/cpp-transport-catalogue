@@ -25,8 +25,8 @@ public:
     
     explicit Node(Value&& value) : variant(std::move(value)) {}
     
-    bool operator==(const Node& rhs) const;
-    bool operator!=(const Node& rhs) const;
+    inline bool operator==(const Node& rhs) const { return GetValue() == rhs.GetValue(); }
+    inline bool operator!=(const Node& rhs) const { return !(*this == rhs); }
     
     inline const Value& GetValue() const { return *this; }
     inline Value& GetValue() { return *this; }
@@ -53,12 +53,12 @@ public:
 
 class Document {
 public:
-    explicit Document(Node root) : root_(std::move(root)) {}
+    explicit Document(Node&& root) : root_(std::move(root)) {}
+    
+    inline bool operator==(const Document& rhs) const { return root_ == rhs.root_; }
+    inline bool operator!=(const Document& rhs) const { return !(*this == rhs); }
     
     inline const Node& GetRoot() const { return root_; }
-    
-    bool operator==(const Document& rhs) const;
-    bool operator!=(const Document& rhs) const;
     
 private:
     Node root_;
@@ -66,6 +66,6 @@ private:
 
 Document Load(std::istream& input);
 
-void Print(const Document& doc, std::ostream& output, int step = 4, int indent = 0);
+void Print(const Document& doc, std::ostream& output, int step, int indent);
 
 }  // namespace json
