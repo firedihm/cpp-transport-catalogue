@@ -5,7 +5,7 @@
 
 namespace render {
 
-struct RenderDetails {
+struct RenderSettings {
     double width = 0.0;
     double height = 0.0;
     double padding = 0.0;
@@ -27,12 +27,11 @@ struct RenderDetails {
 
 class MapRenderer {
 public:
-    MapRenderer(RenderDetails&& details, const catalogue::TransportCatalogue& catalogue, std::ostream& output)
-        : details_(std::move(details)), catalogue_(catalogue), output_(output) {
+    MapRenderer(RenderSettings&& settings, const catalogue::TransportCatalogue& catalogue)
+        : settings_(std::move(settings)), catalogue_(catalogue) {
         
         InitScalingFactors();
         InitSortedLists();
-        RenderMap(); // можно просто рисовать отсюда
     }
     MapRenderer(const MapRenderer&) = delete;
     MapRenderer(MapRenderer&&) = delete;
@@ -40,11 +39,12 @@ public:
     MapRenderer& operator=(const MapRenderer&) = delete;
     MapRenderer& operator=(MapRenderer&&) = delete;
     
+    void RenderMap(std::ostream& output, int step, int indent);
+    
 private:
     void InitScalingFactors();
     void InitSortedLists();
     
-    void RenderMap();
     void DrawBusTraces();
     void DrawBusNames();
     void DrawStops();
@@ -52,10 +52,9 @@ private:
     
     svg::Point TransformCoordsToScreenSpace(const geo::Coordinates& coords);
     
-    const RenderDetails details_;
+    const RenderSettings settings_;
     const catalogue::TransportCatalogue& catalogue_;
     svg::Document document_;
-    std::ostream& output_;
     
     double min_lng_;
     double max_lat_;
@@ -64,7 +63,5 @@ private:
     std::vector<const catalogue::Stop*> sorted_stops_;
     std::vector<const catalogue::Bus*> sorted_buses_;
 };
-
-void RenderMap(RenderDetails&& details, const catalogue::TransportCatalogue& catalogue, std::ostream& output, int step = 0, int indent = 4);
 
 } // namespace render
