@@ -1,5 +1,7 @@
 #include "json_builder.h"
 #include "json_reader.h"
+#include "map_renderer.h"
+#include "transport_router.h"
 
 #include <sstream>
 
@@ -7,6 +9,86 @@ using namespace std::literals;
 using namespace catalogue;
 
 namespace json {
+
+using MapRenderer = std::unique_ptr<render::MapRenderer>;
+using TransportRouter = std::unique_ptr<router::TransportRouter>;
+
+namespace detail {
+geo::Coordinates ParseCoordinates(const Dict& request) {
+    return { request.at("latitude"s).AsDouble(), request.at("longitude"s).AsDouble() };
+}
+
+std::vector<std::pair<std::string_view, int>> ParseDistances(const Dict& request) {
+    const Dict& data = request.at("road_distances"s).AsMap();
+    
+    std::vector<std::pair<std::string_view, int>> result;
+    result.reserve(data.size());
+    for (const auto& /* std::string, Node */ [destination, distance] : data) {
+        result.emplace_back(destination, distance.AsInt());
+    }
+    return result;
+}
+
+std::vector<std::string_view> ParseRoute(const Dict& request) {
+    const Array& data = request.at("stops"s).AsArray();
+    
+    std::vector<std::string_view> result;
+    result.reserve(data.size());
+    for (const Node& entry : data) {
+        result.emplace_back(entry.AsString());
+    }
+    return result;
+}
+
+svg::Color ParseColor(const Node& node) {
+    if (node.IsString()) {
+        return node.AsString();
+    }
+    
+    const Array& color = node.AsArray();
+    if (color.size() == 3) {
+        return svg::Rgb(color[0].AsInt(), color[1].AsInt(), color[2].AsInt());
+    } else {
+        return svg::Rgba(color[0].AsInt(), color[1].AsInt(), color[2].AsInt(), color[3].AsDouble());
+    }
+}
+
+render::RenderSettings ParseRenderSettings(const Dict& settings) {
+    render::RenderSettings result;
+    
+    result.width = settings.at("width"s).AsDouble();
+    result.height = settings.at("height"s).AsDouble();
+    result.padding = settings.at("padding"s).AsDouble();
+    
+    result.line_width = settings.at("line_width"s).AsDouble();
+    result.stop_radius = settings.at("stop_radius"s).AsDouble();
+    
+    result.bus_label_font_size = settings.at("bus_label_font_size"s).AsInt();
+    result.bus_label_offset = svg::Point(settings.at("bus_label_offset"s).AsArray()[0].AsDouble(),
+                                          settings.at("bus_label_offset"s).AsArray()[1].AsDouble());
+    
+    result.stop_label_font_size = settings.at("stop_label_font_size"s).AsInt();
+    result.stop_label_offset = svg::Point(settings.at("stop_label_offset"s).AsArray()[0].AsDouble(),
+                                           settings.at("stop_label_offset"s).AsArray()[1].AsDouble());
+    
+    result.underlayer_color = ParseColor(settings.at("underlayer_color"s));
+    result.underlayer_width = settings.at("underlayer_width"s).AsDouble();
+    
+    const Array& palette = settings.at("color_palette"s).AsArray();
+    std::vector<svg::Color> colors;
+    colors.reserve(palette.size());
+    for (const Node& color : palette) {
+        colors.push_back(ParseColor(color));
+    }
+    result.colors = std::move(colors);
+    
+    return result;
+}
+
+router::RoutingSettings ParseRouteSettings(const Dict& settings) {
+    return { settings.at("bus_wait_time"s).AsInt(), settings.at("bus_velocity"s).AsDouble() };
+}
+} // namespace detail
 
 void JsonReader::ProcessBaseRequests() {
     const Array& requests = input_.GetRoot().AsMap().at("base_requests"s).AsArray();
@@ -22,7 +104,7 @@ void JsonReader::ProcessBaseRequests() {
         std::string_view type = request.at("type"s).AsString();
         
         if (type == "Stop"sv) {
-            catalogue_.AddStop(request.at("name"s).AsString(), ParseCoordinates(request));
+            catalogue_.AddStop(request.at("name"s).AsString(), detail::ParseCoordinates(request));
             if (!request.at("road_distances"s).AsMap().empty()) {
                 distances.push_back(id);
             }
@@ -34,7 +116,7 @@ void JsonReader::ProcessBaseRequests() {
     // ...затем расстояния между ними...
     for (uint id : distances) {
         const Dict& request = requests[id].AsMap();
-        for (const auto& /* <std::pair<std::string_view, int>> */ [destination, distance] : ParseDistances(request)) {
+        for (const auto& /* <std::pair<std::string_view, int>> */ [destination, distance] : detail::ParseDistances(request)) {
             catalogue_.AddDistance(request.at("name"s).AsString(), destination, distance);
         }
     }
@@ -42,42 +124,17 @@ void JsonReader::ProcessBaseRequests() {
     // ...потом маршруты
     for (uint id : buses) {
         const Dict& request = requests[id].AsMap();
-        catalogue_.AddBus(request.at("name"s).AsString(), ParseRoute(request), request.at("is_roundtrip"s).AsBool());
+        catalogue_.AddBus(request.at("name"s).AsString(), detail::ParseRoute(request), request.at("is_roundtrip"s).AsBool());
     }
 }
 
-const Document JsonReader::ProcessStatRequests() {
-    const Array& requests = input_.GetRoot().AsMap().at("stat_requests"s).AsArray();
-    
-    /*
-    Array response;
-    response.reserve(requests.size());
-    for (const Node& request : requests) {
-        std::string_view type = request.AsMap().at("type"s).AsString();
-        if (type == "Bus"sv) {
-            response.push_back(MakeBusResponse(request.AsMap()));
-        } else if (type == "Stop"sv) {
-            response.push_back(MakeStopResponse(request.AsMap()));
-        } else if (type == "Map"sv) {
-            response.push_back(MakeMapResponse(request.AsMap()));
-        }
-    }
-    return Document(Node(response));
-    */
-    // нельзя объявить ctx как Builder::ArrayContext потому что он приватный, но как auto можно -- гениально
-    Builder builder = json::Builder();
-    auto /* Builder::ArrayContext */ ctx = builder.StartArray();
-    for (const Node& request : requests) {
-        std::string_view type = request.AsMap().at("type"s).AsString();
-        if (type == "Bus"sv) {
-            ctx.Value(MakeBusResponse(request.AsMap()));
-        } else if (type == "Stop"sv) {
-            ctx.Value(MakeStopResponse(request.AsMap()));
-        } else if (type == "Map"sv) {
-            ctx.Value(MakeMapResponse(request.AsMap()));
-        }
-    }
-    return Document(ctx.EndArray().Build());
+void JsonReader::PrintStats(int step, int indent) {
+    json::Print(ProcessStatRequests(), output_, step, indent);
+}
+
+void JsonReader::RenderMap(int step, int indent) {
+    render::MapRenderer i(detail::ParseRenderSettings(input_.GetRoot().AsMap().at("render_settings"s).AsMap()), catalogue_);
+    i.RenderMap(output_, step, indent);
 }
 
 Dict JsonReader::MakeBusResponse(const Dict& request) {
@@ -115,9 +172,9 @@ Dict JsonReader::MakeStopResponse(const Dict& request) {
     return response;
 }
 
-Dict JsonReader::MakeMapResponse(const Dict& request) {
+Dict MakeMapResponse(const Dict& request, const MapRenderer& renderer) {
     std::ostringstream oss;
-    render::MapRenderer i(ParseRenderDetails(input_.GetRoot().AsMap().at("render_settings"s).AsMap()), catalogue_, oss);
+    renderer->RenderMap(oss, 0, 4);
     
     Dict response;
     response["request_id"s] = request.at("id"s).AsInt();
@@ -125,83 +182,69 @@ Dict JsonReader::MakeMapResponse(const Dict& request) {
     return response;
 }
 
-void JsonReader::PrintStats(int step, int indent) {
-    json::Print(ProcessStatRequests(), output_, step, indent);
-}
-
-void JsonReader::RenderMap() {
-    render::MapRenderer i(ParseRenderDetails(input_.GetRoot().AsMap().at("render_settings"s).AsMap()), catalogue_, output_);
-}
-
-geo::Coordinates JsonReader::ParseCoordinates(const Dict& request) {
-    return { request.at("latitude"s).AsDouble(), request.at("longitude"s).AsDouble() };
-}
-
-std::vector<std::pair<std::string_view, int>> JsonReader::ParseDistances(const Dict& request) {
-    const Dict& data = request.at("road_distances"s).AsMap();
+Dict MakeRouteResponse(const Dict& request, const TransportRouter& router) {
+    //router::RoutingSettings = ;
     
-    std::vector<std::pair<std::string_view, int>> result;
-    result.reserve(data.size());
-    for (const auto& /* std::string, Node */ [destination, distance] : data) {
-        result.emplace_back(destination, distance.AsInt());
+    return {request};
+}
+
+const Document JsonReader::ProcessStatRequests() {
+    const Array& requests = input_.GetRoot().AsMap().at("stat_requests"s).AsArray();
+    
+    // вспомогательные объекты будут инициализироваться только если поступит соответствующий запрос
+    MapRenderer renderer(nullptr);
+    TransportRouter router(nullptr);
+    
+    Array response;
+    response.reserve(requests.size());
+    for (const Node& request : requests) {
+        std::string_view type = request.AsMap().at("type"s).AsString();
+        if (type == "Bus"sv) {
+            response.push_back(MakeBusResponse(request.AsMap()));
+        } else if (type == "Stop"sv) {
+            response.push_back(MakeStopResponse(request.AsMap()));
+        } else if (type == "Map"sv) {
+            if (!renderer.get()) {
+                const Dict& settings = input_.GetRoot().AsMap().at("render_settings"s).AsMap();
+                renderer = std::make_unique<render::MapRenderer>(detail::ParseRenderSettings(settings), catalogue_);
+            }
+            response.push_back(MakeMapResponse(request.AsMap(), renderer));
+        } else if (type == "Route"sv) {
+            if (!router.get()) {
+                const Dict& settings = input_.GetRoot().AsMap().at("route_settings"s).AsMap();
+                router = std::make_unique<router::TransportRouter>(detail::ParseRouteSettings(settings),
+                                                                   catalogue_.GetStopsData(), catalogue_.GetBusesData());
+            }
+            response.push_back(MakeRouteResponse(request.AsMap(), router));
+        }
     }
-    return result;
-}
-
-std::vector<std::string_view> JsonReader::ParseRoute(const Dict& request) {
-    const Array& data = request.at("stops"s).AsArray();
+    return Document(Node(response));
     
-    std::vector<std::string_view> result;
-    result.reserve(data.size());
-    for (const Node& entry : data) {
-        result.emplace_back(entry.AsString());
+    /* нельзя объявить ctx как Builder::ArrayContext потому что он приватный, но как auto можно -- гениально
+    Builder builder = json::Builder();
+    auto ctx = builder.StartArray();
+    for (const Node& request : requests) {
+        std::string_view type = request.AsMap().at("type"s).AsString();
+        if (type == "Bus"sv) {
+            ctx.Value(MakeBusResponse(request.AsMap()));
+        } else if (type == "Stop"sv) {
+            ctx.Value(MakeStopResponse(request.AsMap()));
+        } else if (type == "Map"sv) {
+            if (!renderer.get()) {
+                const Dict& settings = input_.GetRoot().AsMap().at("render_settings"s).AsMap();
+                renderer = std::make_unique<render::MapRenderer>(detail::ParseRenderSettings(settings), catalogue_);
+            }
+            ctx.Value(MakeMapResponse(request.AsMap(), renderer));
+        } else if (type== "Route"sv) {
+            if (!router.get()) {
+                const Dict& settings = input_.GetRoot().AsMap().at("route_settings"s).AsMap();
+                router = std::make_unique<router::TransportRouter>(detail::ParseRouteSettings(settings), catalogue_);
+            }
+            ctx.Value(MakeRouteResponse(request.AsMap(), router));
+        }
     }
-    return result;
-}
-
-svg::Color JsonReader::ParseColor(const Node& node) {
-    if (node.IsString()) {
-        return node.AsString();
-    }
-    
-    const Array& color = node.AsArray();
-    if (color.size() == 3) {
-        return svg::Rgb(color[0].AsInt(), color[1].AsInt(), color[2].AsInt());
-    } else {
-        return svg::Rgba(color[0].AsInt(), color[1].AsInt(), color[2].AsInt(), color[3].AsDouble());
-    }
-}
-
-render::RenderDetails JsonReader::ParseRenderDetails(const Dict& settings) {
-    render::RenderDetails details;
-    
-    details.width = settings.at("width"s).AsDouble();
-    details.height = settings.at("height"s).AsDouble();
-    details.padding = settings.at("padding"s).AsDouble();
-    
-    details.line_width = settings.at("line_width"s).AsDouble();
-    details.stop_radius = settings.at("stop_radius"s).AsDouble();
-    
-    details.bus_label_font_size = settings.at("bus_label_font_size"s).AsInt();
-    details.bus_label_offset = svg::Point(settings.at("bus_label_offset"s).AsArray()[0].AsDouble(),
-                                          settings.at("bus_label_offset"s).AsArray()[1].AsDouble());
-    
-    details.stop_label_font_size = settings.at("stop_label_font_size"s).AsInt();
-    details.stop_label_offset = svg::Point(settings.at("stop_label_offset"s).AsArray()[0].AsDouble(),
-                                           settings.at("stop_label_offset"s).AsArray()[1].AsDouble());
-    
-    details.underlayer_color = ParseColor(settings.at("underlayer_color"s));
-    details.underlayer_width = settings.at("underlayer_width"s).AsDouble();
-    
-    const Array& palette = settings.at("color_palette"s).AsArray();
-    std::vector<svg::Color> colors;
-    colors.reserve(palette.size());
-    for (const Node& color : palette) {
-        colors.push_back(ParseColor(color));
-    }
-    details.colors = std::move(colors);
-    
-    return details;
+    return Document(ctx.EndArray().Build());
+    */
 }
 
 } // namespace json
