@@ -20,13 +20,13 @@ void MapRenderer::InitScalingFactors() {
     // Вычисляем коэффициент масштабирования вдоль координаты x
     std::optional<double> width_zoom;
     if (!IsZero(max.lng - min_lng_)) {
-        width_zoom = (details_.width - 2 * details_.padding) / (max.lng - min_lng_);
+        width_zoom = (settings_.width - 2 * settings_.padding) / (max.lng - min_lng_);
     }
     
     // Вычисляем коэффициент масштабирования вдоль координаты y
     std::optional<double> height_zoom;
     if (!IsZero(max_lat_ - min.lat)) {
-        height_zoom = (details_.height - 2 * details_.padding) / (max_lat_ - min.lat);
+        height_zoom = (settings_.height - 2 * settings_.padding) / (max_lat_ - min.lat);
     }
     
     if (width_zoom && height_zoom) {
@@ -64,12 +64,12 @@ void MapRenderer::InitSortedLists() {
     sorted_buses_ = std::move(sorted_buses);
 }
 
-void MapRenderer::RenderMap() {
+void MapRenderer::RenderMap(std::ostream& output, int step, int indent) {
     DrawBusTraces();
     DrawBusNames();
     DrawStops();
     DrawStopNames();
-    document_.Render(output_, 0, 4);
+    document_.Render(output, step, indent);
 }
 
 void MapRenderer::DrawBusTraces() {
@@ -86,8 +86,8 @@ void MapRenderer::DrawBusTraces() {
         }
         
         document_.Add(route.SetFillColor("none")
-                           .SetStrokeColor(details_.colors[color_id++ % details_.colors.size()])
-                           .SetStrokeWidth(details_.line_width)
+                           .SetStrokeColor(settings_.colors[color_id++ % settings_.colors.size()])
+                           .SetStrokeWidth(settings_.line_width)
                            .SetStrokeLineCap(svg::StrokeLineCap::ROUND)
                            .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND));
     }
@@ -109,28 +109,28 @@ void MapRenderer::DrawBusNames() {
         
         for (const Stop* stop : final_stops) {
             // background
-            document_.Add(svg::Text().SetFillColor(details_.underlayer_color)
-                                     .SetStrokeColor(details_.underlayer_color)
-                                     .SetStrokeWidth(details_.underlayer_width)
+            document_.Add(svg::Text().SetFillColor(settings_.underlayer_color)
+                                     .SetStrokeColor(settings_.underlayer_color)
+                                     .SetStrokeWidth(settings_.underlayer_width)
                                      .SetStrokeLineCap(svg::StrokeLineCap::ROUND)
                                      .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND)
                                      .SetPosition(TransformCoordsToScreenSpace(stop->coords))
-                                     .SetOffset(details_.bus_label_offset)
-                                     .SetFontSize(details_.bus_label_font_size)
+                                     .SetOffset(settings_.bus_label_offset)
+                                     .SetFontSize(settings_.bus_label_font_size)
                                      .SetFontFamily("Verdana")
                                      .SetFontWeight("bold")
                                      .SetData(bus->name));
             
             // foreground
-            document_.Add(svg::Text().SetFillColor(details_.colors[color_id])
+            document_.Add(svg::Text().SetFillColor(settings_.colors[color_id])
                                      .SetPosition(TransformCoordsToScreenSpace(stop->coords))
-                                     .SetOffset(details_.bus_label_offset)
-                                     .SetFontSize(details_.bus_label_font_size)
+                                     .SetOffset(settings_.bus_label_offset)
+                                     .SetFontSize(settings_.bus_label_font_size)
                                      .SetFontFamily("Verdana")
                                      .SetFontWeight("bold")
                                      .SetData(bus->name));
         }
-        ++color_id %= details_.colors.size();
+        ++color_id %= settings_.colors.size();
     }
 }
 
@@ -142,7 +142,7 @@ void MapRenderer::DrawStops() {
         
         document_.Add(svg::Circle().SetFillColor("white")
                                    .SetCenter(TransformCoordsToScreenSpace(stop->coords))
-                                   .SetRadius(details_.stop_radius));
+                                   .SetRadius(settings_.stop_radius));
     }
 }
 
@@ -153,22 +153,22 @@ void MapRenderer::DrawStopNames() {
         }
         
         // background
-        document_.Add(svg::Text().SetFillColor(details_.underlayer_color)
-                                 .SetStrokeColor(details_.underlayer_color)
-                                 .SetStrokeWidth(details_.underlayer_width)
+        document_.Add(svg::Text().SetFillColor(settings_.underlayer_color)
+                                 .SetStrokeColor(settings_.underlayer_color)
+                                 .SetStrokeWidth(settings_.underlayer_width)
                                  .SetStrokeLineCap(svg::StrokeLineCap::ROUND)
                                  .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND)
                                  .SetPosition(TransformCoordsToScreenSpace(stop->coords))
-                                 .SetOffset(details_.stop_label_offset)
-                                 .SetFontSize(details_.stop_label_font_size)
+                                 .SetOffset(settings_.stop_label_offset)
+                                 .SetFontSize(settings_.stop_label_font_size)
                                  .SetFontFamily("Verdana")
                                  .SetData(stop->name));
         
         // foreground
         document_.Add(svg::Text().SetFillColor("black")
                                  .SetPosition(TransformCoordsToScreenSpace(stop->coords))
-                                 .SetOffset(details_.stop_label_offset)
-                                 .SetFontSize(details_.stop_label_font_size)
+                                 .SetOffset(settings_.stop_label_offset)
+                                 .SetFontSize(settings_.stop_label_font_size)
                                  .SetFontFamily("Verdana")
                                  .SetData(stop->name));
     }
@@ -176,8 +176,8 @@ void MapRenderer::DrawStopNames() {
 
 svg::Point MapRenderer::TransformCoordsToScreenSpace(const geo::Coordinates& coords) {
     svg::Point point;
-    point.x = (coords.lng - min_lng_) * zoom_ + details_.padding;
-    point.y = (max_lat_ - coords.lat) * zoom_ + details_.padding;
+    point.x = (coords.lng - min_lng_) * zoom_ + settings_.padding;
+    point.y = (max_lat_ - coords.lat) * zoom_ + settings_.padding;
     return point;
 }
 
