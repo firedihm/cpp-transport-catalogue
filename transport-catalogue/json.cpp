@@ -6,14 +6,6 @@ using namespace std::literals;
 
 namespace json {
 
-bool Node::operator==(const Node& rhs) const {
-    return GetValue() == rhs.GetValue();
-}
-
-bool Node::operator!=(const Node& rhs) const {
-    return !(*this == rhs);
-}
-
 bool Node::IsInt() const {
     return std::holds_alternative<int>(GetValue());
 }
@@ -107,14 +99,6 @@ Dict& Node::AsMap() {
         throw std::logic_error("Node has no dictionary"s);
     }
     return std::get<Dict>(GetValue());
-}
-
-bool Document::operator==(const Document& rhs) const {
-    return this->GetRoot() == rhs.GetRoot();
-}
-
-bool Document::operator!=(const Document& rhs) const {
-    return !(*this == rhs);
 }
 
 namespace detail {
