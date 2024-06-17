@@ -54,7 +54,7 @@ private:
     }
     
     void RelaxRoute(VertexId vertex_from, VertexId vertex_to, const RouteInternalData& route_from,
-                    const RouteInternalData& route_to) {
+                                                              const RouteInternalData& route_to) {
         auto& route_relaxing = routes_internal_data_[vertex_from][vertex_to];
         const Weight candidate_weight = route_from.weight + route_to.weight;
         if (!route_relaxing || candidate_weight < route_relaxing->weight) {
