@@ -1,9 +1,8 @@
 #pragma once
 
-#include "domain.h"
 #include "router.h"
+#include "transport_catalogue.h"
 
-#include <deque>
 #include <variant>
 
 namespace router {
@@ -13,31 +12,36 @@ struct RoutingSettings {
     double velocity = 0.0;
 };
 
+// тип элементов поля "items" ответа на запрос "Route"
 struct WaitResponse {
     WaitResponse(std::string_view stop, double time) : stop(stop), time(time) {}
     
     const std::string type{"Wait"};
-    const std::string_view stop;
-    const double time;
+    std::string_view stop;
+    double time;
 };
 struct BusResponse {
-    BusResponse(std::string_view bus, int span_count, double time) : bus(bus), span_count(span_count), time(time) {}
+    BusResponse(std::string_view bus, int span, double time) : bus(bus), span(span), time(time) {}
     
     const std::string type{"Bus"};
-    const std::string_view bus;
-    const int span_count;
-    const double time;
+    std::string_view bus;
+    int span;
+    double time;
 };
-using ResponseItem = std::variant<WaitResponse, BusResponse>;
+using ResponseItem = std::variant<std::nullptr_t, WaitResponse, BusResponse>;
 
 class TransportRouter {
+private:
+    using Weight = double;
+    
 public:
-    TransportRouter(RoutingSettings&& settings, const std::deque<catalogue::Stop>& stops,
-                                                const std::deque<catalogue::Bus>& buses)
-        : settings_(std::move(settings)), graph_(stops.size() * 2), router_(graph_) {
+    TransportRouter(RoutingSettings&& settings, const catalogue::TransportCatalogue& catalogue)
+        : settings_(std::move(settings)), catalogue_(catalogue)
+        , graph_(catalogue_.GetStopsData().size() * 2), router_(graph_) {
         
-        InitGraphStopEdges(stops);
-        InitGraphBusEdges(buses);
+        // вершины графа это остановки, рёбра – время ожидания на остановке или поездки на автобусе
+        InitGraphStopEdges();
+        InitGraphBusEdges();
     }
     TransportRouter(const TransportRouter&) = delete;
     TransportRouter(TransportRouter&&) = delete;
@@ -46,8 +50,16 @@ public:
     TransportRouter& operator=(TransportRouter&&) = delete;
     
 private:
-    using Weight = double;
+    void InitGraphStopEdges();
+    void InitGraphBusEdges();
     
+    // граф храним отдельно, так как маршрутизатор ссылается на него
+    RoutingSettings settings_;
+    const catalogue::TransportCatalogue& catalogue_;
+    graph::DirectedWeightedGraph<Weight> graph_;
+    graph::Router<Weight> router_;
+    
+    // вспомогательные объекты для быстрого построения маршрутов после инициализации
     struct StopVertices { graph::VertexId from, to; };
     
     struct EdgeHasher {
@@ -59,15 +71,6 @@ private:
         std::hash<Weight> hash_W;
     };
     
-    void InitGraphStopEdges(const std::deque<catalogue::Stop>& stops);
-    void InitGraphBusEdges(const std::deque<catalogue::Bus>& buses);
-    
-    // граф храним отдельно, так как маршрутизатор ссылается на него
-    RoutingSettings settings_;
-    graph::DirectedWeightedGraph<Weight> graph_;
-    graph::Router<Weight> router_;
-    
-    // вспомогательные объекты для быстрого построения маршрутов после инициализации
     std::unordered_map<std::string_view, StopVertices> stop_to_vertices_;
     std::unordered_map<graph::Edge<Weight>, ResponseItem, EdgeHasher> edge_to_response_;
 };
