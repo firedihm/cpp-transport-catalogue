@@ -14,7 +14,8 @@ Builder::KeyContext Builder::Key(std::string&& key) {
 }
 
 Builder::ValueContext Builder::Value(Node::Value&& value) {
-    if (!root_.IsNull() && !nodes_stack_.empty() && !nodes_stack_.top()->IsArray() && !nodes_stack_.top()->IsString()) {
+    if (!root_.IsNull() && !nodes_stack_.empty() &&
+        !nodes_stack_.top()->IsArray() && !nodes_stack_.top()->IsString()) {
         throw std::logic_error("Array or dictionary key must be created before adding any values"s);
     }
     
