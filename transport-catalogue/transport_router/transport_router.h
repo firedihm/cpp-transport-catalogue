@@ -32,7 +32,8 @@ using ResponseItem = std::variant<WaitResponse, BusResponse>;
 
 class TransportRouter {
 public:
-    TransportRouter(RoutingSettings&& settings, const std::deque<catalogue::Stop>& stops, const std::deque<catalogue::Bus>& buses)
+    TransportRouter(RoutingSettings&& settings, const std::deque<catalogue::Stop>& stops,
+                                                const std::deque<catalogue::Bus>& buses)
         : settings_(std::move(settings)), graph_(stops.size() * 2), router_(graph_) {
         
         InitGraphStopEdges(stops);
