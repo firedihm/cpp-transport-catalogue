@@ -1,13 +1,28 @@
 #pragma once
 
-#include "domain.h"
+#include "geo.h"
 
 #include <cfloat>
 #include <deque>
 #include <set>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace catalogue {
+
+struct Stop {
+    std::string name;
+    geo::Coordinates coords;
+};
+
+enum class RouteType { RING, PENDULUM };
+
+struct Bus {
+    std::string name;
+    std::vector<const Stop*> route;
+    RouteType type;
+};
 
 class TransportCatalogue {
 public:
