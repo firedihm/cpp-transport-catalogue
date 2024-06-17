@@ -206,14 +206,15 @@ const Document JsonReader::ProcessStatRequests() {
         } else if (type == "Map"sv) {
             if (!renderer.get()) {
                 const Dict& settings = input_.GetRoot().AsMap().at("render_settings"s).AsMap();
-                renderer = std::make_unique<render::MapRenderer>(detail::ParseRenderSettings(settings), catalogue_);
+                renderer = std::make_unique<render::MapRenderer>(detail::ParseRenderSettings(settings),
+                                                                 catalogue_);
             }
             response.push_back(MakeMapResponse(request.AsMap(), renderer));
         } else if (type == "Route"sv) {
             if (!router.get()) {
                 const Dict& settings = input_.GetRoot().AsMap().at("route_settings"s).AsMap();
                 router = std::make_unique<router::TransportRouter>(detail::ParseRouteSettings(settings),
-                                                                   catalogue_.GetStopsData(), catalogue_.GetBusesData());
+                                                                   catalogue_);
             }
             response.push_back(MakeRouteResponse(request.AsMap(), router));
         }
@@ -232,13 +233,15 @@ const Document JsonReader::ProcessStatRequests() {
         } else if (type == "Map"sv) {
             if (!renderer.get()) {
                 const Dict& settings = input_.GetRoot().AsMap().at("render_settings"s).AsMap();
-                renderer = std::make_unique<render::MapRenderer>(detail::ParseRenderSettings(settings), catalogue_);
+                renderer = std::make_unique<render::MapRenderer>(detail::ParseRenderSettings(settings),
+                                                                 catalogue_);
             }
             ctx.Value(MakeMapResponse(request.AsMap(), renderer));
         } else if (type== "Route"sv) {
             if (!router.get()) {
                 const Dict& settings = input_.GetRoot().AsMap().at("route_settings"s).AsMap();
-                router = std::make_unique<router::TransportRouter>(detail::ParseRouteSettings(settings), catalogue_);
+                router = std::make_unique<router::TransportRouter>(detail::ParseRouteSettings(settings),
+                                                                   catalogue_);
             }
             ctx.Value(MakeRouteResponse(request.AsMap(), router));
         }
