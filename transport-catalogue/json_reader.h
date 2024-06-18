@@ -18,7 +18,8 @@ private:
     Dict MakeBusResponse(const Dict& request);
     Dict MakeStopResponse(const Dict& request);
     
-    /* методы ниже опираются на вспомогательные объекты, которые лениво инициализируются в ProcessStatRequests()
+    /*
+     * Методы ниже опираются на вспомогательные объекты, которые лениво инициализируются в ProcessStatRequests():
      * static Dict MakeMapResponse(const Dict& request, const MapRenderer& renderer);
      * static Dict MakeRouteResponse(const Dict& request, const TransportRouter& router);
      */
