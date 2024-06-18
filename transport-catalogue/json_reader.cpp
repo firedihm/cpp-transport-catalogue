@@ -221,7 +221,8 @@ const Document JsonReader::ProcessStatRequests() {
     }
     return Document(Node(response));
     
-    /* нельзя объявить ctx как Builder::ArrayContext потому что он приватный, но как auto можно -- гениально
+    /*
+    нельзя объявить ctx как Builder::ArrayContext потому что он приватный, но как auto можно -- гениально
     Builder builder = json::Builder();
     auto ctx = builder.StartArray();
     for (const Node& request : requests) {
