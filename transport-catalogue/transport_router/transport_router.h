@@ -39,7 +39,7 @@ public:
         : settings_(std::move(settings)), catalogue_(catalogue)
         , graph_(catalogue_.GetStopsData().size() * 2), router_(graph_) {
         
-        // вершины графа это остановки, рёбра – время ожидания на остановке или поездки на автобусе
+        // вершины графа это остановки, рёбра – время ожидания на остановке или движения в автобусе
         InitGraphStopEdges();
         InitGraphBusEdges();
     }
@@ -48,6 +48,8 @@ public:
     
     TransportRouter& operator=(const TransportRouter&) = delete;
     TransportRouter& operator=(TransportRouter&&) = delete;
+    
+    std::pair<Weight, std::vector<ResponseItem>> BuildRoute(std::string_view from, std::string_view to) const;
     
 private:
     void InitGraphStopEdges();
