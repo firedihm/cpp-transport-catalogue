@@ -68,7 +68,6 @@ std::ostream& operator<<(std::ostream& os, const StrokeLineJoin& value);
 template <typename Owner>
 class PathProps {
 public:
-    // эти методы вынести в .cpp не получается, в отличие от RenderAttrs...
     Owner& SetFillColor(Color color) { return fill_color_ = std::move(color), AsOwner(); }
     Owner& SetStrokeColor(Color color) { return stroke_color_ = std::move(color), AsOwner(); }
     Owner& SetStrokeWidth(double width) { return width_ = width, AsOwner(); }
