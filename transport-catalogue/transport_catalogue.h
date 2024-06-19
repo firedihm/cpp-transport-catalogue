@@ -28,6 +28,14 @@ class TransportCatalogue {
 public:
     struct MinMaxCoords { geo::Coordinates min, max; };
     
+    struct StopPtrsHasher {
+        size_t operator()(const std::pair<const Stop*, const Stop*>& pair) const {
+            return hash(pair.first) + 31 * hash(pair.second);
+        }
+        
+        std::hash<const void*> hash;
+    };
+    
     TransportCatalogue() = default;
     TransportCatalogue(const TransportCatalogue&) = delete;
     TransportCatalogue(TransportCatalogue&&) = delete;
@@ -52,15 +60,7 @@ public:
     static double CalculateRouteGeoLength(const Bus* bus);
     int CalculateRouteLength(const Bus* bus) const;
     
-private:
-    struct StopPtrsHasher {
-        size_t operator()(const std::pair<const Stop*, const Stop*>& pair) const {
-            return hash(pair.first) + 31 * hash(pair.second);
-        }
-        
-        std::hash<const void*> hash;
-    };
-    
+private:    
     std::deque<Stop> stops_;
     std::unordered_map<std::string_view, const Stop*> stops_view_;
     
