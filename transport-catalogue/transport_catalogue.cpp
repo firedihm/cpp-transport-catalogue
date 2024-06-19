@@ -20,6 +20,7 @@ const std::set<std::string_view>* TransportCatalogue::GetBusesForStop(const Stop
 }
 
 int TransportCatalogue::GetDistanceBetweenStops(const Stop* from, const Stop* to) const {
+    // если расстояние from-to не задано явно, значит оно равно to-from
     auto it = distances_.find(std::pair(from, to));
     return it != distances_.end() ? it->second
                                   : (it = distances_.find(std::pair(to, from))) != distances_.end() ? it->second : 0;
@@ -43,7 +44,7 @@ void TransportCatalogue::AddBus(const std::string& id, std::vector<std::string_v
         const Stop* stop_ptr = GetStop(stop);
         stop_ptrs.push_back(stop_ptr);
         
-        // обновляем здесь, чтобы при масштабировании не учитывать остановки без автобусов; сначала min...
+        // обновляем здесь, чтобы при рендеринге не учитывать остановки без автобусов; сначала min...
         min_max_coords_.min.lat = std::min(min_max_coords_.min.lat, stop_ptr->coords.lat);
         min_max_coords_.min.lng = std::min(min_max_coords_.min.lng, stop_ptr->coords.lng);
         // ...потом max
