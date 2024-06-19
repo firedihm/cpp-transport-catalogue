@@ -3,6 +3,7 @@
 #include "router.h"
 #include "transport_catalogue.h"
 
+#include <memory>
 #include <variant>
 
 namespace router {
@@ -37,11 +38,13 @@ public:
     
     TransportRouter(RoutingSettings&& settings, const catalogue::TransportCatalogue& catalogue)
         : settings_(std::move(settings)), catalogue_(catalogue)
-        , graph_(catalogue_.GetStopsData().size() * 2), router_(graph_) {
+        , graph_(catalogue_.GetStopsData().size() * 2) {
         
         // вершины графа это остановки, рёбра – время ожидания на остановке или движения в автобусе
-        InitGraphStopEdges();
+        InitGraphWaitEdges();
         InitGraphBusEdges();
+        
+        router_ = std::make_unique<graph::Router<Weight>>(graph_);
     }
     TransportRouter(const TransportRouter&) = delete;
     TransportRouter(TransportRouter&&) = delete;
@@ -52,14 +55,15 @@ public:
     std::optional<RouteResponse> BuildRoute(std::string_view from, std::string_view to) const;
     
 private:
-    void InitGraphStopEdges();
+    void InitGraphWaitEdges();
     void InitGraphBusEdges();
     
-    // граф храним отдельно, так как маршрутизатор ссылается на него
     RoutingSettings settings_;
     const catalogue::TransportCatalogue& catalogue_;
+    
+    // маршрутизатор нужно создавать после графа, поэтому объявим его как std::unique_ptr
     graph::DirectedWeightedGraph<Weight> graph_;
-    graph::Router<Weight> router_;
+    std::unique_ptr<graph::Router<Weight>> router_;
     
     // вспомогательные объекты для быстрого построения маршрутов после инициализации
     struct StopVertices { graph::VertexId begin, end; };
