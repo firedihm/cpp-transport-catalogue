@@ -2,7 +2,6 @@
 #include "json_reader.h"
 
 #include <sstream>
-#include <iostream>
 
 using namespace std::literals;
 using namespace catalogue;
