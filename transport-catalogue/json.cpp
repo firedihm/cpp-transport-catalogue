@@ -335,7 +335,7 @@ private:
     void PrintValue(const bool value) { out << std::boolalpha << value; }
     void PrintValue(const int value) { out << value; }
     void PrintValue(const double value) { out << value; }
-    void PrintValue(const nullptr_t) { out << "null"sv; }
+    void PrintValue(const std::nullptr_t) { out << "null"sv; }
     void PrintValue(const std::string& value) {
         out << '"';
         for (const char c : value) {
