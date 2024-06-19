@@ -2,6 +2,7 @@
 #include "json_reader.h"
 
 #include <sstream>
+#include <iostream>
 
 using namespace std::literals;
 using namespace catalogue;
@@ -78,7 +79,7 @@ const Document JsonReader::ProcessStatRequests() {
             response.push_back(MakeMapResponse(request.AsMap(), renderer));
         } else if (type == "Route"sv) {
             if (!router.get()) {
-                const Dict& settings = input_.GetRoot().AsMap().at("route_settings"s).AsMap();
+                const Dict& settings = input_.GetRoot().AsMap().at("routing_settings"s).AsMap();
                 router = std::make_unique<router::TransportRouter>(ParseRouteSettings(settings), catalogue_);
             }
             response.push_back(MakeRouteResponse(request.AsMap(), router));
@@ -103,7 +104,7 @@ const Document JsonReader::ProcessStatRequests() {
             ctx.Value(MakeMapResponse(request.AsMap(), renderer));
         } else if (type== "Route"sv) {
             if (!router.get()) {
-                const Dict& settings = input_.GetRoot().AsMap().at("route_settings"s).AsMap();
+                const Dict& settings = input_.GetRoot().AsMap().at("routing_settings"s).AsMap();
                 router = std::make_unique<router::TransportRouter>(ParseRouteSettings(settings), catalogue_);
             }
             ctx.Value(MakeRouteResponse(request.AsMap(), router));
@@ -261,7 +262,9 @@ render::RenderSettings JsonReader::ParseRenderSettings(const Dict& settings) {
 }
 
 router::RoutingSettings JsonReader::ParseRouteSettings(const Dict& settings) {
-    return { settings.at("bus_wait_time"s).AsInt(), settings.at("bus_velocity"s).AsDouble() };
+    const double KMH_TO_MMIN = 1000.0 / 60.0;
+    
+    return { settings.at("bus_wait_time"s).AsInt(), settings.at("bus_velocity"s).AsDouble() * KMH_TO_MMIN };
 }
 
 } // namespace json
