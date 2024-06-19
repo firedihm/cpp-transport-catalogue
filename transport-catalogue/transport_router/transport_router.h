@@ -33,7 +33,7 @@ using ResponseItem = std::variant<std::nullptr_t, WaitResponse, BusResponse>;
 class TransportRouter {
 public:
     using Weight = double;
-    using RouteResponse = std::optional<std::pair<Weight, std::vector<ResponseItem>>>;
+    struct RouteResponse { Weight weight; std::vector<ResponseItem> response_items; };
     
     TransportRouter(RoutingSettings&& settings, const catalogue::TransportCatalogue& catalogue)
         : settings_(std::move(settings)), catalogue_(catalogue)
@@ -49,7 +49,7 @@ public:
     TransportRouter& operator=(const TransportRouter&) = delete;
     TransportRouter& operator=(TransportRouter&&) = delete;
     
-    RouteResponse BuildRoute(std::string_view from, std::string_view to) const;
+    std::optional<RouteResponse> BuildRoute(std::string_view from, std::string_view to) const;
     
 private:
     void InitGraphStopEdges();
