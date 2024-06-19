@@ -1,7 +1,7 @@
 #include "transport_router.h"
 
 using namespace catalogue;
-
+#include <iostream>
 namespace router {
 
 void TransportRouter::InitGraphWaitEdges() {
@@ -29,6 +29,7 @@ void TransportRouter::InitGraphBusEdges() {
          */
         struct Record { double time; int span; };
         std::unordered_map<std::pair<const Stop*, const Stop*>, Record, TransportCatalogue::StopPtrsHasher> span_to_time;
+        span_to_time.reserve(bus.route.size());
         
         // оценим все возможные отрезки на маршруте автобуса
         for (auto from = bus.route.begin(); from != bus.route.end() - 1; ++from) {
@@ -45,17 +46,17 @@ void TransportRouter::InitGraphBusEdges() {
                     it->second = value;
                 }
             }
+        }
+        
+        for (const auto& [span, record] : span_to_time) {
+            graph::Edge<Weight> edge{stop_to_vertices_[span.first->name].end,
+                                     stop_to_vertices_[span.second->name].begin,
+                                     record.time};
             
-            for (const auto& [span, record] : span_to_time) {
-                graph::Edge<Weight> edge{stop_to_vertices_[span.first->name].end,
-                                         stop_to_vertices_[span.second->name].begin,
-                                         record.time};
-                
-                graph_.AddEdge(edge);
-                
-                // добавим данные во вспомогательные объекты
-                edge_to_response_.emplace(edge, BusResponse(bus.name, record.span, record.time));
-            }
+            graph_.AddEdge(edge);
+            
+            // добавим данные во вспомогательные объекты
+            edge_to_response_.emplace(edge, BusResponse(bus.name, record.span, record.time));
         }
     }
 }
