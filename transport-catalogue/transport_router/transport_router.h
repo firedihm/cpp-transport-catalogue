@@ -28,7 +28,7 @@ struct BusResponse {
     int span;
     double time;
 };
-using ResponseItem = std::variant<std::nullptr_t, WaitResponse, BusResponse>;
+using ResponseItem = std::variant<WaitResponse, BusResponse>;
 
 class TransportRouter {
 public:
