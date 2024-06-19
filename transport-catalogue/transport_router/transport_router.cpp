@@ -61,15 +61,16 @@ void TransportRouter::InitGraphBusEdges() {
     }
 }
 
-TransportRouter::RouteResponse TransportRouter::BuildRoute(std::string_view from, std::string_view to) const {
-    RouteResponse result;
+std::optional<TransportRouter::RouteResponse> TransportRouter::BuildRoute(std::string_view from,
+                                                                          std::string_view to) const {
+    std::optional<RouteResponse> result(std::nullopt);
     if (auto route = router_.BuildRoute(stop_to_vertices_.at(from).begin, stop_to_vertices_.at(to).begin)) {
-        std::vector<ResponseItem> responses;
+        std::vector<ResponseItem> response_items;
         for (graph::EdgeId edge_id : route->edges) {
-            responses.push_back(edge_to_response_.at(graph_.GetEdge(edge_id)));
+            response_items.push_back(edge_to_response_.at(graph_.GetEdge(edge_id)));
         }
         
-        result = std::pair(route->weight, std::move(responses));
+        result.emplace(route->weight, std::move(response_items));
     }
     return result;
 }
