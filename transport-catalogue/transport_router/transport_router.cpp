@@ -12,7 +12,7 @@ void TransportRouter::InitGraphStopEdges() {
     
     Weight wait_time = static_cast<Weight>(settings_.wait_time);
     for (graph::VertexId index = 0; const Stop& stop : stops) {
-        graph::Edge<Weight> edge = {index, index + 1, wait_time};
+        graph::Edge<Weight> edge{index, index + 1, wait_time};
         
         graph_.AddEdge(edge);
         
@@ -28,39 +28,50 @@ void TransportRouter::InitGraphBusEdges() {
     for (const catalogue::Bus& bus : catalogue_.GetBusesData()) {
         double travel_time = 0.0;
         
-        struct TempShortestTime { const Stop* from, * to; int span; double time; };
-        std::vector<TempShortestTime> shortest_times;
-        shortest_times.reserve(bus.route.size());
+        /*
+         * Если автобус проезжает между некоторыми остановками несколько раз, 
+         * то храним наименьшее время пути на этом отрезке, т.е. оставляем первую 
+         * запись для отрезка, потому что travel_time растёт с каждой итерацией. 
+         * В структуре будем хранить уже обработанные отрезки.
+         */
+        struct ProcessedSpan { const Stop* from, * to; };
+        std::vector<ProcessedSpan> processed_spans;
+        processed_spans.reserve(bus.route.size());
         
         for (auto from = bus.route.begin(), to = from + 1; to != bus.route.end(); ++from, ++to) {
             travel_time += catalogue_.GetDistanceBetweenStops(*from, *to) / settings_.velocity;
             
-            /*
-             * Если автобус проезжает между некоторыми остановками несколько раз, 
-             * то храним наименьшее время пути на этом отрезке
-             */
-            if (auto it = std::find_if(shortest_times.begin(), shortest_times.end(),
-                                       [from, to](const TempShortestTime& elem) {
-                                           return (*from == elem.from) && (*to == elem.to);
-                                       }); it == shortest_times.end()) {
-                shortest_times.emplace_back(*from, *to, std::distance(from, to), travel_time);
-            }
-            
-            for (const TempShortestTime& shortest_time : shortest_times) {
-                StopVertices vx = stop_to_vertices_[shortest_time.from->name];
-                graph::Edge<Weight> edge = {vx.from, vx.to, shortest_time.time};
+            // если текущий отрезок ещё не повторялся...
+            if (auto it = std::find_if(processed_spans.begin(), processed_spans.end(),
+                                       [from, to](const ProcessedSpan& span) {
+                                           return (*from == span.from) && (*to == span.to);
+                                       }); it == processed_spans.end()) {
+                processed_spans.emplace_back(*from, *to);
+                
+                graph::Edge<Weight> edge{stop_to_vertices_[(*from)->name].end,
+                                         stop_to_vertices_[(*to)->name].begin,
+                                         travel_time};
                 
                 graph_.AddEdge(edge);
                 
-                edge_to_response_.emplace(edge, BusResponse(bus.name, shortest_time.span, shortest_time.time));
+                // добавим данные во вспомогательные объекты
+                edge_to_response_.emplace(edge, BusResponse(bus.name, std::distance(from, to), travel_time));
             }
         }
     }
 }
 
-std::pair<TransportRouter::Weight, std::vector<ResponseItem>> TransportRouter::BuildRoute(std::string_view from,
-                                                                                          std::string_view to) const {
-    std::optional<graph::Router<Weight>::RouteInfo> result;
+TransportRouter::RouteResponse TransportRouter::BuildRoute(std::string_view from, std::string_view to) const {
+    RouteResponse result;
+    if (auto route = router_.BuildRoute(stop_to_vertices_.at(from).begin, stop_to_vertices_.at(to).begin)) {
+        std::vector<ResponseItem> responses;
+        for (graph::EdgeId edge_id : route->edges) {
+            responses.push_back(edge_to_response_.at(graph_.GetEdge(edge_id)));
+        }
+        
+        result = std::pair(route->weight, std::move(responses));
+    }
+    return result;
 }
 
 } // namespace router
