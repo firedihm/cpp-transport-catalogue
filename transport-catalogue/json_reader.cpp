@@ -59,8 +59,8 @@ const Document JsonReader::ProcessStatRequests() {
     const Array& requests = input_.GetRoot().AsMap().at("stat_requests"s).AsArray();
     
     // вспомогательные объекты будут инициализироваться только если поступит соответствующий запрос
-    MapRenderer renderer(std::nullptr);
-    TransportRouter router(std::nullptr);
+    MapRenderer renderer(nullptr);
+    TransportRouter router(nullptr);
     
     Array response;
     response.reserve(requests.size());
@@ -160,11 +160,10 @@ Dict JsonReader::MakeMapResponse(const Dict& request, const MapRenderer& rendere
 
 Dict JsonReader::MakeRouteResponse(const Dict& request, const TransportRouter& router) {
     Dict response;
-    if (std::optional<router::TransportRouter::RouteResponse> route_info = 
+    if (std::optional<router::TransportRouter::RouteResponse> route_info =
             router->BuildRoute(request.at("from"s).AsString(), request.at("to"s).AsString())) {
-        
         Array items;
-        for (auto it = route_info.response_items.begin(); it != route_info.response_items.end(); ++it) {
+        for (auto it = route_info->response_items.begin(); it != route_info->response_items.end(); ++it) {
             std::visit([&items](const auto& item) {
                 Dict result;
                 result["type"s] = item.type;
@@ -181,7 +180,7 @@ Dict JsonReader::MakeRouteResponse(const Dict& request, const TransportRouter& r
         }
         
         response["request_id"s] = request.at("id"s).AsInt();
-        response["total_time"s] = route_info.weight;
+        response["total_time"s] = route_info->weight;
         response["items"s] = std::move(items);
     } else {
         response["request_id"s] = request.at("id"s).AsInt();
