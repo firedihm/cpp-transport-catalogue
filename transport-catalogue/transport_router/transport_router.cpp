@@ -29,7 +29,6 @@ void TransportRouter::InitGraphBusEdges() {
          */
         struct Record { double time; int span; };
         std::unordered_map<std::pair<const Stop*, const Stop*>, Record, TransportCatalogue::StopPtrsHasher> span_to_time;
-        span_to_time.reserve(bus.route.size());
         
         // оценим все возможные отрезки на маршруте автобуса
         for (auto from = bus.route.begin(); from != bus.route.end() - 1; ++from) {
