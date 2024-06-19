@@ -31,10 +31,10 @@ struct BusResponse {
 using ResponseItem = std::variant<std::nullptr_t, WaitResponse, BusResponse>;
 
 class TransportRouter {
-private:
-    using Weight = double;
-    
 public:
+    using Weight = double;
+    using RouteResponse = std::optional<std::pair<Weight, std::vector<ResponseItem>>>;
+    
     TransportRouter(RoutingSettings&& settings, const catalogue::TransportCatalogue& catalogue)
         : settings_(std::move(settings)), catalogue_(catalogue)
         , graph_(catalogue_.GetStopsData().size() * 2), router_(graph_) {
@@ -49,7 +49,7 @@ public:
     TransportRouter& operator=(const TransportRouter&) = delete;
     TransportRouter& operator=(TransportRouter&&) = delete;
     
-    std::pair<Weight, std::vector<ResponseItem>> BuildRoute(std::string_view from, std::string_view to) const;
+    RouteResponse BuildRoute(std::string_view from, std::string_view to) const;
     
 private:
     void InitGraphStopEdges();
@@ -62,7 +62,7 @@ private:
     graph::Router<Weight> router_;
     
     // вспомогательные объекты для быстрого построения маршрутов после инициализации
-    struct StopVertices { graph::VertexId from, to; };
+    struct StopVertices { graph::VertexId begin, end; };
     
     struct EdgeHasher {
         size_t operator()(const graph::Edge<Weight>& edge) const {
