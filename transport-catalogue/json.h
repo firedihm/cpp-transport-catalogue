@@ -24,6 +24,7 @@ public:
     using Value = variant;
     
     explicit Node(Value&& value) : variant(std::move(value)) {}
+    explicit Node(std::string_view sv) : variant(std::string(sv)) {}
     
     inline bool operator==(const Node& rhs) const { return GetValue() == rhs.GetValue(); }
     inline bool operator!=(const Node& rhs) const { return !(*this == rhs); }
