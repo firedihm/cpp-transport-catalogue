@@ -14,6 +14,7 @@ namespace catalogue {
 struct Stop {
     std::string name;
     geo::Coordinates coords;
+    std::set<std::string_view> passing_buses;
 };
 
 enum class RouteType { RING, PENDULUM };
@@ -45,7 +46,6 @@ public:
     
     const Stop* GetStop(std::string_view key) const;
     const Bus* GetBus(std::string_view key) const;
-    const std::set<std::string_view>* GetBusesForStop(const Stop* stop) const;
     int GetDistanceBetweenStops(const Stop* from, const Stop* to) const;
     
     inline const std::deque<Stop>& GetStopsData() const { return stops_; };
@@ -67,7 +67,6 @@ private:
     std::deque<Bus> buses_;
     std::unordered_map<std::string_view, const Bus*> buses_view_;
     
-    std::unordered_map<const Stop*, std::set<std::string_view>> stop_to_buses_;
     std::unordered_map<std::pair<const Stop*, const Stop*>, int, StopPtrsHasher> distances_;
     
     // для рендера: при обновлении справочника будем запоминать маргинальные координаты <min, max>
