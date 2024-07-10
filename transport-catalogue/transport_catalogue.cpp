@@ -14,11 +14,6 @@ const Bus* TransportCatalogue::GetBus(std::string_view key) const {
     return it != buses_view_.end() ? it->second : nullptr;
 }
 
-const std::set<std::string_view>* TransportCatalogue::GetBusesForStop(const Stop* stop) const {
-    auto it = stop_to_buses_.find(stop);
-    return it != stop_to_buses_.end() ? &(it->second) : nullptr;
-}
-
 int TransportCatalogue::GetDistanceBetweenStops(const Stop* from, const Stop* to) const {
     // если расстояние from-to не задано явно, значит оно равно to-from
     auto it = distances_.find(std::pair(from, to));
@@ -29,7 +24,6 @@ int TransportCatalogue::GetDistanceBetweenStops(const Stop* from, const Stop* to
 void TransportCatalogue::AddStop(const std::string& id, geo::Coordinates&& coords) {
     const Stop& ref = stops_.emplace_back(id, std::move(coords));
     stops_view_.emplace(ref.name, &ref);
-    stop_to_buses_[&ref];
 }
 
 void TransportCatalogue::AddDistance(const std::string& source, const std::string_view destination, int distance) {
@@ -62,7 +56,7 @@ void TransportCatalogue::AddBus(const std::string& id, std::vector<std::string_v
     buses_view_.emplace(ref.name, &ref);
     
     for (const Stop* stop : ref.route) {
-        stop_to_buses_.at(stop).insert(ref.name);
+        const_cast<Stop*>(stop)->passing_buses.insert(ref.name);
     }
 }
 
