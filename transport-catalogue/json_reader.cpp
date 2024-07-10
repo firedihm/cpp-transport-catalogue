@@ -117,6 +117,7 @@ Dict JsonReader::MakeBusResponse(const Dict& request) {
     Dict response;
     if (const Bus* bus = catalogue_.GetBus(request.at("name"s).AsString())) {
         double route_length = static_cast<double>(catalogue_.CalculateRouteLength(bus));
+        
         response["request_id"s] = request.at("id"s).AsInt();
         response["stop_count"s] = static_cast<int>(bus->route.size());
         response["unique_stop_count"s] = catalogue_.CountUniqueStops(bus);
@@ -132,9 +133,10 @@ Dict JsonReader::MakeBusResponse(const Dict& request) {
 Dict JsonReader::MakeStopResponse(const Dict& request) {
     Dict response;
     if (const Stop* stop = catalogue_.GetStop(request.at("name"s).AsString())) {
-        Array routes(stop->passing_buses.begin(), stop->passing_buses.end());
+        Array buses(stop->passing_buses.begin(), stop->passing_buses.end());
+        
         response["request_id"s] = request.at("id"s).AsInt();
-        response["buses"s] = std::move(routes);
+        response["buses"s] = std::move(buses);
     } else {
         response["request_id"s] = request.at("id"s).AsInt();
         response["error_message"s] = "not found"s;
