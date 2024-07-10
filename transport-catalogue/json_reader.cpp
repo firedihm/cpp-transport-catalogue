@@ -132,13 +132,7 @@ Dict JsonReader::MakeBusResponse(const Dict& request) {
 Dict JsonReader::MakeStopResponse(const Dict& request) {
     Dict response;
     if (const Stop* stop = catalogue_.GetStop(request.at("name"s).AsString())) {
-        const std::set<std::string_view>* buses = catalogue_.GetBusesForStop(stop);
-        
-        //Array routes(buses->begin(), buses->end()); // не работает -- БРЕД
-        Array routes;
-        for (auto it = buses->begin(); it != buses->end(); ++it) {
-            routes.emplace_back(std::string(*it));
-        }
+        Array routes(stop->passing_buses.begin(), stop->passing_buses.end());
         response["request_id"s] = request.at("id"s).AsInt();
         response["buses"s] = std::move(routes);
     } else {
