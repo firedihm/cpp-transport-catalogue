@@ -136,7 +136,7 @@ void MapRenderer::DrawBusNames() {
 
 void MapRenderer::DrawStops() {
     for (const Stop* stop : sorted_stops_) {
-        if (catalogue_.GetBusesForStop(stop)->empty()) {
+        if (stop->passing_buses.empty()) {
             continue;
         }
         
@@ -148,7 +148,7 @@ void MapRenderer::DrawStops() {
 
 void MapRenderer::DrawStopNames() {
     for (const Stop* stop : sorted_stops_) {
-        if (catalogue_.GetBusesForStop(stop)->empty()) {
+        if (stop->passing_buses.empty()) {
             continue;
         }
         
